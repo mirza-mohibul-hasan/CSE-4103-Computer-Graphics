@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGL Quad with Two Triangles</title>
+    <style>
+        body { margin: 0; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <canvas id="webgl-canvas"></canvas>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Get the WebGL context
+            var canvas = document.getElementById("webgl-canvas");
+            var gl = canvas.getContext("webgl");
+
+            if (!gl) {
+                console.error("Unable to initialize WebGL. Your browser may not support it.");
+                return;
+            }
+
+            // Define vertices for a quad
+            var vertices = new Float32Array([
+                -0.5,  0.5,  // Vertex 1
+                -0.5, -0.5,  // Vertex 2
+                 0.5,  0.5,  // Vertex 3
+                 0.5, -0.5   // Vertex 4
+            ]);
+
+            // Create a buffer and put the vertices in it
+            var vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+            // Vertex shader program
+            var vsSource = `
+                attribute vec4 aVertexPosition;
+                void main(void) {
+                    gl_Position = aVertexPosition;
+                }
+            `;
+
+            // Fragment shader program
+            var fsSource = `
+                void main(void) {
+                    gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0); // White color
+                }
+            `;
+
+            // Compile shaders
+            function compileShader(source, type) {
+                var shader = gl.createShader(type);
+                gl.shaderSource(shader, source);
+                gl.compileShader(shader);
+
+                if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                    console.error('ERROR compiling shader:', gl.getShaderInfoLog(shader));
+                    gl.deleteShader(shader);
+                    return null;
+                }
+
+                return shader;
+            }
+
+            var vertexShader = compileShader(vsSource, gl.VERTEX_SHADER);
+            var fragmentShader = compileShader(fsSource, gl.FRAGMENT_SHADER);
+
+            // Create shader program
+            var shaderProgram = gl.createProgram();
+            gl.attachShader(shaderProgram, vertexShader);
+            gl.attachShader(shaderProgram, fragmentShader);
+            gl.linkProgram(shaderProgram);
+
+            if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+                console.error('Unable to initialize the shader program:', gl.getProgramInfoLog(shaderProgram));
+                return;
+            }
+
+            gl.useProgram(shaderProgram);
+
+            // Link vertex buffer to shader attribute
+            var positionAttrib = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+            gl.vertexAttribPointer(positionAttrib, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(positionAttrib);
+
+            // Clear the canvas and draw the quad
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertices.length / 2);
+        });
+    </script>
+</body>
+</html>
