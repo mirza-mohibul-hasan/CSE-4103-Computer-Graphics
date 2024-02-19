@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <canvas id="myCanvas" width="1024" height="1024" style="border:1px solid #d3d3d3;">
+        Your browser does not support the HTML5 canvas tag.</canvas>
+    <script>
+        let clickCount = 0;
+        const canvas = document.getElementById('myCanvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const space = 2;
+
+        canvas.addEventListener('click', function () {
+            clickCount++;
+            drawSpiral();
+        });
+
+        function drawSpiral() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < clickCount * 60; i++) {
+                const angle = 0.1 * i;
+                const x = centerX + (1 + angle) * Math.cos(angle) * space;
+                const y = centerY + (1 + angle) * Math.sin(angle) * space;
+                drawRectangle(x, y, angle * space / 50);
+            }
+        }
+        function drawRectangle(x, y, size) {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(x, y, size, size);
+        }
+    </script>
+</body>
+
+</html>

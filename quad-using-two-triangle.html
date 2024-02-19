@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quad with Two Triangles - WebGL</title>
+    <style>
+      body {
+        margin: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="webgl-canvas"></canvas>
+    <script type="text/javascript">
+      document.addEventListener("DOMContentLoaded", function () {
+        // Vertex shader program
+        const vsSource = `
+        attribute vec4 aVertexPosition;
+        void main(void) {
+          gl_Position = aVertexPosition;
+        }
+      `;
+
+        // Fragment shader program
+        const fsSource = `
+            precision mediump float;
+            varying vec4 vColor;
+
+            void main(void) {
+                gl_FragColor = vColor;
+            }
+            `;
+
+        function initShaderProgram(gl, vsSource, fsSource) {
+          const vertexShader = loadShader(gl, gl.VERTEX_SHADER, vsSource);
+          const fragmentShader = loadShader(gl, gl.FRAGMENT_SHADER, fsSource);
+
+          const shaderProgram = gl.createProgram();
+          gl.attachShader(shaderProgram, vertexShader);
+          gl.attachShader(shaderProgram, fragmentShader);
+          gl.linkProgram(shaderProgram);
+
+          if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            console.error(
+              "Unable to initialize the shader program: " +
+                gl.getProgramInfoLog(shaderProgram)
+            );
+            return null;
+          }
+
+          return shaderProgram;
+        }
+
+        function loadShader(gl, type, source) {
+          const shader = gl.createShader(type);
+
+          gl.shaderSource(shader, source);
+          gl.compileShader(shader);
+
+          if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            console.error(
+              "An error occurred compiling the shaders: " +
+                gl.getShaderInfoLog(shader)
+            );
+            gl.deleteShader(shader);
+            return null;
+          }
+
+          return shader;
+        }
+
+        function initBuffers(gl) {
+            const vertices = new Float32Array([
+              // Vertex positions
+              -1.0,  1.0,
+               1.0,  1.0,
+              -1.0, -1.0,
+               1.0, -1.0,
+          
+              // Vertex colors
+              1.0, 0.0, 0.0, 1.0, // Red for top-left
+              0.0, 1.0, 0.0, 1.0, // Green for top-right
+              0.0, 0.0, 1.0, 1.0, // Blue for bottom-left
+              1.0, 1.0, 0.0, 1.0  // Yellow for bottom-right
+            ]);
+          
+            const vertexBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+          
+            return vertexBuffer;
+          }
+
+          function drawScene(gl, programInfo, buffers) {
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+          
+            gl.useProgram(programInfo.program);
+          
+            const vertexPosition = gl.getAttribLocation(programInfo.program, 'aVertexPosition');
+            gl.vertexAttribPointer(vertexPosition, 2, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(vertexPosition);
+          
+            const vertexColor = gl.getAttribLocation(programInfo.program, 'aVertexColor');
+            gl.vertexAttribPointer(vertexColor, 4, gl.FLOAT, false, 0, 8 * 2 * 4); // Offset to the color data
+            gl.enableVertexAttribArray(vertexColor);
+          
+            gl.bindBuffer(gl.ARRAY_BUFFER, buffers);
+          
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+          }
+
+        function main() {
+          const canvas = document.getElementById("webgl-canvas");
+          const gl = canvas.getContext("webgl");
+
+          if (!gl) {
+            console.error(
+              "Unable to initialize WebGL. Your browser may not support it."
+            );
+            return;
+          }
+
+          const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+
+          const programInfo = {
+            program: shaderProgram,
+          };
+
+          const buffers = initBuffers(gl);
+
+          drawScene(gl, programInfo, buffers);
+        }
+
+        main();
+      });
+    </script>
+  </body>
+</html>

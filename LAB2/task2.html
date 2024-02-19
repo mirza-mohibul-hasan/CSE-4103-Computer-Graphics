@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Flower with Rhodonea Curve</title>
+    <style>
+        canvas { 
+            display: block; 
+            margin: auto; 
+        }
+    </style>
+</head>
+<body>
+    <canvas id="glCanvas" width="800" height="600"></canvas>
+
+    <script type="text/javascript">
+
+        const canvas = document.getElementById("glCanvas");
+        const gl = canvas.getContext("webgl");
+
+        if (!gl) {
+            alert("Unable to initialize WebGL. Your browser may not support it.");
+        }
+
+        const vertexShaderSource = `
+            attribute vec2 position;
+
+            void main() {
+                gl_Position = vec4(position, 0.0, 1.0);
+                gl_PointSize = 5.0; // Adjust point size as needed
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+            uniform vec4 color;
+
+            void main() {
+                gl_FragColor = color; // Set point color
+            }
+        `;
+
+        function compileShader(gl, source, type) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error("An error occurred compiling the shaders:", gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+
+            return shader;
+        }
+
+        const vertexShader = compileShader(gl, vertexShaderSource, gl.VERTEX_SHADER);
+        const fragmentShader = compileShader(gl, fragmentShaderSource, gl.FRAGMENT_SHADER);
+        const shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
+        gl.useProgram(shaderProgram);
+
+        const positionBuffer = gl.createBuffer();
+        const positionAttribLocation = gl.getAttribLocation(shaderProgram, "position");
+        gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(positionAttribLocation);
+
+        // Initialize buffer with initial flower data
+        const initialPoints = generateFlower();
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(initialPoints), gl.STATIC_DRAW);
+
+        // Event listener for mouse clicks
+        let clickCount = 1;
+        canvas.addEventListener("click", updateFlower);
+
+        function generateFlower() {
+            const numPoints = 1000000;
+            const points = [];
+
+            for (let i = 0; i < numPoints; i++) {
+                const angle = (i / numPoints) * 2 * Math.PI;
+                const radius = 0.5 + 0.5 * Math.sin(6 * angle);
+                const x = radius * Math.cos(angle);
+                const y = radius * Math.sin(angle);
+                points.push(x, y);
+            }
+
+            return points;
+        }
+
+        function updateFlower() {
+            clickCount++;
+            const color = (clickCount % 2 === 0) ? [1.0, 0.0, 0.0, 1.0] : [0.0, 1.0, 0.0, 1.0]; // Alternating red and green colors
+            const colorUniformLocation = gl.getUniformLocation(shaderProgram, "color");
+            gl.uniform4fv(colorUniformLocation, color);
+
+            const points = generateFlower();
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
+
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.vertexAttribPointer(positionAttribLocation, 2, gl.FLOAT, false, 0, 0); // Re-enable the attribute pointer
+            gl.enableVertexAttribArray(positionAttribLocation); // Re-enable the attribute array
+            gl.drawArrays(gl.POINTS, 0, points.length / 2);
+        }
+
+    </script>
+</body>
+</html>
